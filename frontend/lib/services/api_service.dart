@@ -74,6 +74,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> criarPalestra({
     required String titulo,
+    required String data,
     required String horarioInicio,
     required String horarioFim,
     required String local,
@@ -84,6 +85,7 @@ class ApiService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'titulo': titulo,
+        'data': data,
         'horario_inicio': horarioInicio,
         'horario_fim': horarioFim,
         'local': local,

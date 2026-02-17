@@ -42,6 +42,7 @@ class PalestranteCreate(BaseModel):
 
 class PalestraCreate(BaseModel):
     titulo: str
+    data: str
     horario_inicio: str
     horario_fim: str
     local: str
@@ -129,6 +130,7 @@ def criar_palestra(dados: PalestraCreate):
             raise HTTPException(status_code=404, detail="Palestrante não encontrado")
         palestra = Palestra(
             titulo=dados.titulo,
+            data=dados.data,
             horario_inicio=dados.horario_inicio,
             horario_fim=dados.horario_fim,
             local=dados.local,

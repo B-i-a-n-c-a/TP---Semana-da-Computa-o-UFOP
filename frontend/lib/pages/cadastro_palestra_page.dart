@@ -11,6 +11,7 @@ class CadastroPalestraPage extends StatefulWidget {
 class _CadastroPalestraPageState extends State<CadastroPalestraPage> {
   final _formKey = GlobalKey<FormState>();
   final _tituloController = TextEditingController();
+  final _dataController = TextEditingController();
   final _horarioInicioController = TextEditingController();
   final _horarioFimController = TextEditingController();
   final _localController = TextEditingController();
@@ -40,6 +41,21 @@ class _CadastroPalestraPageState extends State<CadastroPalestraPage> {
     }
   }
 
+  Future<void> _selecionarData() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2024),
+      lastDate: DateTime(2030),
+    );
+    if (picked != null) {
+      final dia = picked.day.toString().padLeft(2, '0');
+      final mes = picked.month.toString().padLeft(2, '0');
+      final ano = picked.year.toString();
+      _dataController.text = '$dia/$mes/$ano';
+    }
+  }
+
   Future<void> _selecionarHora(TextEditingController controller) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -66,6 +82,7 @@ class _CadastroPalestraPageState extends State<CadastroPalestraPage> {
     try {
       await ApiService.criarPalestra(
         titulo: _tituloController.text.trim(),
+        data: _dataController.text.trim(),
         horarioInicio: _horarioInicioController.text.trim(),
         horarioFim: _horarioFimController.text.trim(),
         local: _localController.text.trim(),
@@ -79,6 +96,7 @@ class _CadastroPalestraPageState extends State<CadastroPalestraPage> {
           ),
         );
         _tituloController.clear();
+        _dataController.clear();
         _horarioInicioController.clear();
         _horarioFimController.clear();
         _localController.clear();
@@ -98,6 +116,7 @@ class _CadastroPalestraPageState extends State<CadastroPalestraPage> {
   @override
   void dispose() {
     _tituloController.dispose();
+    _dataController.dispose();
     _horarioInicioController.dispose();
     _horarioFimController.dispose();
     _localController.dispose();
@@ -129,6 +148,20 @@ class _CadastroPalestraPageState extends State<CadastroPalestraPage> {
                 ),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Informe o título' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _dataController,
+                readOnly: true,
+                decoration: const InputDecoration(
+                  labelText: 'Data',
+                  prefixIcon: Icon(Icons.calendar_today),
+                  border: OutlineInputBorder(),
+                ),
+                onTap: _selecionarData,
+                validator: (v) => v == null || v.trim().isEmpty
+                    ? 'Informe a data'
+                    : null,
               ),
               const SizedBox(height: 16),
               Row(

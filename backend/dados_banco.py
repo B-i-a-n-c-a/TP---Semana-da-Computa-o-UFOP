@@ -34,6 +34,7 @@ class Palestrante(SQLModel, table=True):
 class Palestra(SQLModel, table=True):
     id_palestra: Optional[int] = Field(default=None, primary_key=True)
     titulo: Optional[str] = None
+    data: Optional[str] = None
     horario_inicio: str = Field(nullable=False)
     horario_fim: str = Field(nullable=False)
     local: Optional[str] = None
