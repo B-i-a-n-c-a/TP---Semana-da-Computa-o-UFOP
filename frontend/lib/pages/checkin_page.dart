@@ -9,9 +9,7 @@ class CheckinPage extends StatefulWidget {
 }
 
 class _CheckinPageState extends State<CheckinPage> {
-  List<dynamic> _alunos = [];
   List<dynamic> _palestras = [];
-  int? _alunoSelecionado;
   int? _palestraSelecionada;
   bool _loading = false;
 
@@ -23,10 +21,8 @@ class _CheckinPageState extends State<CheckinPage> {
 
   Future<void> _carregarDados() async {
     try {
-      final alunos = await ApiService.listarAlunos();
-      final palestras = await ApiService.listarPalestras();
+      final palestras = await ApiService.listarPalestrasPublicas();
       setState(() {
-        _alunos = alunos;
         _palestras = palestras;
       });
     } catch (e) {
@@ -41,10 +37,10 @@ class _CheckinPageState extends State<CheckinPage> {
   }
 
   Future<void> _fazerCheckin() async {
-    if (_alunoSelecionado == null || _palestraSelecionada == null) {
+    if (_palestraSelecionada == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Selecione o aluno e a palestra'),
+          content: Text('Selecione uma palestra'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -53,7 +49,6 @@ class _CheckinPageState extends State<CheckinPage> {
     setState(() => _loading = true);
     try {
       final resultado = await ApiService.fazerCheckin(
-        idAluno: _alunoSelecionado!,
         idPalestra: _palestraSelecionada!,
       );
       if (mounted) {
@@ -64,14 +59,13 @@ class _CheckinPageState extends State<CheckinPage> {
           ),
         );
         setState(() {
-          _alunoSelecionado = null;
           _palestraSelecionada = null;
         });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('$e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -102,27 +96,11 @@ class _CheckinPageState extends State<CheckinPage> {
                 size: 64, color: Colors.deepPurple),
             const SizedBox(height: 8),
             const Text(
-              'Registrar presença do aluno em uma palestra',
+              'Registrar sua presença em uma palestra',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 32),
-            DropdownButtonFormField<int>(
-              value: _alunoSelecionado,
-              decoration: const InputDecoration(
-                labelText: 'Aluno',
-                prefixIcon: Icon(Icons.person),
-                border: OutlineInputBorder(),
-              ),
-              items: _alunos.map<DropdownMenuItem<int>>((a) {
-                return DropdownMenuItem<int>(
-                  value: a['id_aluno'],
-                  child: Text('${a['nome']} (${a['matricula']})'),
-                );
-              }).toList(),
-              onChanged: (v) => setState(() => _alunoSelecionado = v),
-            ),
-            const SizedBox(height: 16),
             DropdownButtonFormField<int>(
               value: _palestraSelecionada,
               decoration: const InputDecoration(

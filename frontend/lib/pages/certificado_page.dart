@@ -12,8 +12,8 @@ class CertificadoPage extends StatefulWidget {
 }
 
 class _CertificadoPageState extends State<CertificadoPage> {
-  List<dynamic> _alunos = [];
-  int? _alunoSelecionado;
+  List<dynamic> _usuarios = [];
+  int? _usuarioSelecionado;
   Map<String, dynamic>? _certificado;
   bool _loading = false;
   bool _buscando = false;
@@ -21,18 +21,18 @@ class _CertificadoPageState extends State<CertificadoPage> {
   @override
   void initState() {
     super.initState();
-    _carregarAlunos();
+    _carregarUsuarios();
   }
 
-  Future<void> _carregarAlunos() async {
+  Future<void> _carregarUsuarios() async {
     try {
-      final alunos = await ApiService.listarAlunos();
-      setState(() => _alunos = alunos);
+      final usuarios = await ApiService.listarUsuarios();
+      setState(() => _usuarios = usuarios);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Erro ao carregar alunos: $e'),
+              content: Text('Erro ao carregar usuários: $e'),
               backgroundColor: Colors.red),
         );
       }
@@ -40,10 +40,10 @@ class _CertificadoPageState extends State<CertificadoPage> {
   }
 
   Future<void> _emitirCertificado() async {
-    if (_alunoSelecionado == null) {
+    if (_usuarioSelecionado == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Selecione um aluno'),
+          content: Text('Selecione um usuário'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -54,12 +54,12 @@ class _CertificadoPageState extends State<CertificadoPage> {
       _certificado = null;
     });
     try {
-      final cert = await ApiService.emitirCertificado(_alunoSelecionado!);
+      final cert = await ApiService.emitirCertificado(_usuarioSelecionado!);
       setState(() => _certificado = cert);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('$e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -71,7 +71,7 @@ class _CertificadoPageState extends State<CertificadoPage> {
     if (_certificado == null) return;
 
     final pdf = pw.Document();
-    final aluno = _certificado!['aluno'];
+    final usuario = _certificado!['usuario'];
     final palestras = _certificado!['palestras'] as List;
     final totalHoras = _certificado!['total_horas'];
     final dataEmissao = _certificado!['data_emissao'];
@@ -190,10 +190,10 @@ class _CertificadoPageState extends State<CertificadoPage> {
       ),
     );
 
-    final nomeAluno = aluno['nome'] ?? 'certificado';
+    final nomeUsuario = usuario['nome'] ?? 'certificado';
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'certificado_$nomeAluno.pdf',
+      name: 'certificado_$nomeUsuario.pdf',
     );
   }
 
@@ -202,7 +202,8 @@ class _CertificadoPageState extends State<CertificadoPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Emissão de Certificado'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -219,20 +220,20 @@ class _CertificadoPageState extends State<CertificadoPage> {
             ),
             const SizedBox(height: 24),
             DropdownButtonFormField<int>(
-              value: _alunoSelecionado,
+              value: _usuarioSelecionado,
               decoration: const InputDecoration(
-                labelText: 'Selecione o Aluno',
+                labelText: 'Selecione o Participante',
                 prefixIcon: Icon(Icons.person),
                 border: OutlineInputBorder(),
               ),
-              items: _alunos.map<DropdownMenuItem<int>>((a) {
+              items: _usuarios.map<DropdownMenuItem<int>>((u) {
                 return DropdownMenuItem<int>(
-                  value: a['id_aluno'],
-                  child: Text('${a['nome']} (${a['matricula']})'),
+                  value: u['id_usuario'],
+                  child: Text('${u['nome']} (${u['matricula'] ?? u['email']})'),
                 );
               }).toList(),
               onChanged: (v) => setState(() {
-                _alunoSelecionado = v;
+                _usuarioSelecionado = v;
                 _certificado = null;
               }),
             ),
@@ -248,8 +249,8 @@ class _CertificadoPageState extends State<CertificadoPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.description),
-                label: Text(
-                    _buscando ? 'Gerando...' : 'Emitir Certificado'),
+                label:
+                    Text(_buscando ? 'Gerando...' : 'Emitir Certificado'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
                   foregroundColor: Colors.white,
@@ -262,7 +263,8 @@ class _CertificadoPageState extends State<CertificadoPage> {
                 elevation: 4,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: Colors.deepPurple, width: 2),
+                  side:
+                      const BorderSide(color: Colors.deepPurple, width: 2),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -288,7 +290,8 @@ class _CertificadoPageState extends State<CertificadoPage> {
                       Text(
                         _certificado!['mensagem'] ?? '',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 16, height: 1.5),
+                        style:
+                            const TextStyle(fontSize: 16, height: 1.5),
                       ),
                       const SizedBox(height: 24),
                       const Text(
@@ -301,7 +304,8 @@ class _CertificadoPageState extends State<CertificadoPage> {
                       const SizedBox(height: 8),
                       ...(_certificado!['palestras'] as List).map((p) {
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
                             children: [
                               const Icon(Icons.check_circle,
@@ -328,8 +332,8 @@ class _CertificadoPageState extends State<CertificadoPage> {
                       const SizedBox(height: 4),
                       Text(
                         'Emitido em: ${_certificado!['data_emissao']}',
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.grey),
                       ),
                     ],
                   ),
