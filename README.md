@@ -1,96 +1,233 @@
-Guia de Configuração do Projeto - Semana da Computação DECSI
-============================================================
+# Semana da Computação DECSI — UFOP
 
-Este repositório contém o sistema completo da Semana da Computação, dividido em:
+Sistema de gerenciamento da Semana da Computação do DECSI/UFOP, com backend em **FastAPI** (Python) e frontend em **Flutter**.
 
-*   **Backend:** API em Python (FastAPI).
-    
-*   **Frontend:** Aplicativo Mobile (Flutter).
-    
+---
 
-1\. Configurando o Banco de Dados (PostgreSQL)
-----------------------------------------------
+## Rodar com Docker (recomendado)
 
-O Flutter não acessa o banco diretamente; ele se comunica com a nossa API Python.
+Precisa apenas de **Docker** e **Docker Compose** instalados.
 
-1.  Abra o **pgAdmin 4**.
-    
-2.  Crie um banco de dados chamado: db\_evento\_decsi.
-    
-3.  **Criação das Tabelas:**
-    
-    *   No pgAdmin, clique com o botão direito no banco criado e vá em **Query Tool**.
-        
-    *   Abra o arquivo backend/database/schema.sql que está neste repositório.
-        
-    *   Copie o código SQL, cole no Query Tool e clique em **Execute (F5)**.
-        
+```bash
+docker compose up --build
+```
 
-2\. Configurando o Backend (Python)
------------------------------------
+Isso sobe automaticamente:
 
-Abra o terminal na pasta /backend:
+| Serviço    | URL                        |
+| ---------- | -------------------------- |
+| Frontend   | http://localhost:3000      |
+| Backend    | http://localhost:8000      |
+| Swagger    | http://localhost:8000/docs |
+| PostgreSQL | localhost:5432             |
 
-1.  PowerShellpython -m venv venv
-    
-2.  PowerShell.\\venv\\Scripts\\activate
-    
-3.  PowerShellpip install fastapi uvicorn psycopg2-binary python-dotenv
-    
-4.  **Configurar Variáveis de Ambiente:**
-    
-    *   Copie o arquivo .env.example e renomeie para .env.
-        
-    *   Preencha as credenciais do seu banco de dados local.
-        
+Para parar:
 
-3\. Configurando o Frontend (Flutter)
--------------------------------------
+```bash
+docker compose down
+```
 
+Para apagar os dados do banco e recomeçar do zero:
 
-### Instalação Básica 
+```bash
+docker compose down -v
+```
 
-1.  Baixe o SDK do Flutter no [site oficial](https://docs.flutter.dev/get-started/install/windows).
-    
-2.  Extraia em C:\\src\\flutter e adicione o caminho C:\\src\\flutter\\bin ao seu **Path** nas Variáveis de Ambiente do Windows.
-    
-3.  **Extensões do VS Code:** Instale as extensões Flutter e Dart.
-    
+---
 
-### Preparação do Projeto
+## Rodar manualmente (sem Docker)
 
-Abra o terminal na pasta /frontend:
+### Pré-requisitos
 
-PowerShell
+- **Python 3.10+**
+- **PostgreSQL** instalado e rodando
+- **Flutter SDK** (canal stable)
+- **Google Chrome** (para rodar o frontend web)
 
-Plain    flutter pub get   `
+---
 
-4\. Executando o Projeto
-------------------------------------
+## 1. Banco de Dados (PostgreSQL)
 
+### 1.1 Criar o banco
 
-### Passo 1: Iniciar o Backend
+```bash
+sudo -u postgres psql -c "CREATE DATABASE db_evento_decsi;"
+```
 
-No terminal do backend (com venv ativo):
+### 1.2 Criar as tabelas
 
-**PowerShell**
+```bash
+PGPASSWORD=postgres psql -h localhost -U postgres -d db_evento_decsi -f backend/database/init.sql
+```
 
-`   python main.py   `
+> Isso já cria todas as tabelas e insere o **admin padrão**.
 
-### Passo 2: Iniciar o Frontend (Dispositivo Físico ou Chrome)
+---
 
-**Recomendação:** Use um celular Android real via cabo USB ou o próprio Google Chrome para testar a interface.
+## 2. Backend (FastAPI)
 
-1.  Conecte seu celular e ative a **Depuração USB** nas opções de desenvolvedor.
-    
-2.  PowerShell# Para rodar no celular/dispositivo conectadoflutter run -d device\_id # Ou para testar rápido no navegadorflutter run -d chrome_(Para ver o ID do seu dispositivo, use o comando flutter devices)_.
-    
+### 2.1 Criar e ativar o ambiente virtual
 
-📁 Estrutura de Pastas Relevante
---------------------------------
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-*   /backend/database/init.sql: Contém todos os comandos CREATE TABLE do projeto.
-    
-*   /backend/main.py: Ponto de entrada da API.
-    
-*   /frontend/lib/: Código fonte das telas em Flutter.
+### 2.2 Instalar dependências
+
+```bash
+pip install -r backend/requirements.txt
+```
+
+### 2.3 Configurar variáveis de ambiente
+
+O arquivo `backend/.env` já vem configurado. Ajuste se necessário:
+
+```env
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=db_evento_decsi
+```
+
+### 2.4 Rodar o servidor
+
+```bash
+uvicorn main:app --reload --app-dir backend
+```
+
+O backend estará disponível em: **http://127.0.0.1:8000**
+
+A documentação da API (Swagger) pode ser acessada em: **http://127.0.0.1:8000/docs**
+
+---
+
+## 3. Frontend (Flutter)
+
+### 3.1 Instalar dependências
+
+```bash
+cd frontend
+flutter pub get
+```
+
+### 3.2 Rodar no Chrome
+
+```bash
+flutter run -d chrome
+```
+
+> **Importante:** O backend precisa estar rodando antes de iniciar o frontend.
+
+---
+
+## Credenciais Padrão
+
+| Tipo  | E-mail              | Senha    |
+| ----- | ------------------- | -------- |
+| Admin | admin@decsi.ufop.br | admin123 |
+
+Ao fazer login como **admin**, você terá acesso ao painel administrativo com as seguintes funcionalidades:
+
+- Cadastrar palestrantes
+- Cadastrar palestras
+- Emitir certificados
+- Gerenciar administradores
+- Enviar notificações
+
+Ao fazer login como **usuário normal** (registrado pela tela de cadastro), você terá acesso a:
+
+- Cronograma de palestras
+- Check-in em palestras
+- Avaliar palestras
+- Ver avaliações por palestra
+- Meu certificado
+- Notificações
+
+---
+
+## Estrutura do Projeto
+
+```
+├── backend/
+│   ├── main.py                 # Entrada da API FastAPI
+│   ├── dados_banco.py          # Modelos e conexão com PostgreSQL
+│   ├── auth_utils.py           # Utilitários de autenticação (hash de senha)
+│   ├── requirements.txt        # Dependências Python
+│   ├── .env                    # Variáveis de ambiente do banco
+│   ├── database/
+│   │   └── init.sql            # Script de criação das tabelas
+│   └── rotas/
+│       ├── auth.py             # Rotas de login e registro
+│       ├── admin.py            # Rotas administrativas
+│       └── usuario.py          # Rotas de usuários normais
+│
+├── frontend/
+│   ├── lib/
+│   │   ├── main.dart           # Entrada do app Flutter
+│   │   ├── services/
+│   │   │   └── api_service.dart # Comunicação com a API
+│   │   └── pages/
+│   │       ├── login_page.dart
+│   │       ├── registro_page.dart
+│   │       ├── admin_home_page.dart
+│   │       ├── usuario_home_page.dart
+│   │       ├── cadastro_palestrante_page.dart
+│   │       ├── cadastro_palestra_page.dart
+│   │       ├── certificado_page.dart
+│   │       ├── gerenciar_admins_page.dart
+│   │       ├── enviar_notificacao_page.dart
+│   │       ├── cronograma_page.dart
+│   │       ├── checkin_page.dart
+│   │       ├── avaliacao_page.dart
+│   │       ├── ver_avaliacoes_page.dart
+│   │       ├── notificacoes_page.dart
+│   │       └── meu_certificado_page.dart
+│   └── pubspec.yaml
+│
+├── README.md
+└── README2.md
+```
+
+---
+
+## Rotas da API
+
+### Autenticação (`/auth`)
+
+| Método | Rota             | Descrição              |
+| ------ | ---------------- | ---------------------- |
+| POST   | `/auth/registro` | Registrar novo usuário |
+| POST   | `/auth/login`    | Fazer login            |
+
+### Administração (`/admin`)
+
+| Método | Rota                              | Descrição              |
+| ------ | --------------------------------- | ---------------------- |
+| POST   | `/admin/palestrantes`             | Cadastrar palestrante  |
+| GET    | `/admin/palestrantes`             | Listar palestrantes    |
+| DELETE | `/admin/palestrantes/{id}`        | Remover palestrante    |
+| POST   | `/admin/palestras`                | Cadastrar palestra     |
+| DELETE | `/admin/palestras/{id}`           | Remover palestra       |
+| GET    | `/admin/certificado/{id_usuario}` | Emitir certificado     |
+| POST   | `/admin/administradores`          | Criar administrador    |
+| GET    | `/admin/administradores`          | Listar administradores |
+| DELETE | `/admin/administradores/{id}`     | Remover administrador  |
+| GET    | `/admin/usuarios`                 | Listar usuários        |
+| POST   | `/admin/notificacoes`             | Enviar notificação     |
+
+### Usuário (`/usuario`)
+
+| Método | Rota                                       | Descrição                         |
+| ------ | ------------------------------------------ | --------------------------------- |
+| GET    | `/usuario/palestras`                       | Cronograma (público)              |
+| POST   | `/usuario/checkin`                         | Fazer check-in                    |
+| GET    | `/usuario/checkins?id_usuario={id}`        | Listar meus check-ins             |
+| POST   | `/usuario/avaliar`                         | Avaliar palestra                  |
+| GET    | `/usuario/avaliacoes?id_usuario={id}`      | Minhas avaliações                 |
+| GET    | `/usuario/avaliacoes-por-palestra`         | Avaliações agrupadas por palestra |
+| GET    | `/usuario/notificacoes?id_usuario={id}`    | Minhas notificações               |
+| PUT    | `/usuario/notificacoes/{id}/lida`          | Marcar notificação como lida      |
+| GET    | `/usuario/perfil?id_usuario={id}`          | Meu perfil                        |
+| GET    | `/usuario/meu-certificado?id_usuario={id}` | Meu certificado                   |
