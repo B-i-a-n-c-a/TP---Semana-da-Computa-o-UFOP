@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import '../services/api_service.dart';
 
 class CertificadoPage extends StatefulWidget {
@@ -62,6 +65,136 @@ class _CertificadoPageState extends State<CertificadoPage> {
     } finally {
       setState(() => _buscando = false);
     }
+  }
+
+  Future<void> _exportarPdf() async {
+    if (_certificado == null) return;
+
+    final pdf = pw.Document();
+    final aluno = _certificado!['aluno'];
+    final palestras = _certificado!['palestras'] as List;
+    final totalHoras = _certificado!['total_horas'];
+    final dataEmissao = _certificado!['data_emissao'];
+    final mensagem = _certificado!['mensagem'] ?? '';
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4.landscape,
+        margin: const pw.EdgeInsets.all(40),
+        build: (pw.Context context) {
+          return pw.Container(
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(
+                color: PdfColor.fromHex('#7B1FA2'),
+                width: 3,
+              ),
+              borderRadius: pw.BorderRadius.circular(12),
+            ),
+            padding: const pw.EdgeInsets.all(40),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Text(
+                  'CERTIFICADO DE PARTICIPAÇÃO',
+                  style: pw.TextStyle(
+                    fontSize: 28,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColor.fromHex('#7B1FA2'),
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                pw.Text(
+                  'Semana da Computação — DECSI/UFOP',
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    color: PdfColor.fromHex('#666666'),
+                  ),
+                ),
+                pw.Divider(height: 40, color: PdfColor.fromHex('#7B1FA2')),
+                pw.Text(
+                  mensagem,
+                  textAlign: pw.TextAlign.center,
+                  style: const pw.TextStyle(fontSize: 16),
+                ),
+                pw.SizedBox(height: 24),
+                pw.Align(
+                  alignment: pw.Alignment.centerLeft,
+                  child: pw.Text(
+                    'Palestras assistidas:',
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                ...palestras.map((p) {
+                  return pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 3),
+                    child: pw.Row(
+                      children: [
+                        pw.Text('✔  ',
+                            style: pw.TextStyle(
+                                fontSize: 12,
+                                color: PdfColor.fromHex('#388E3C'))),
+                        pw.Expanded(
+                          child: pw.Text(
+                            '${p['titulo']} — ${p['horario_inicio']} às ${p['horario_fim']} (${p['palestrante']})',
+                            style: const pw.TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                pw.Divider(height: 40, color: PdfColor.fromHex('#7B1FA2')),
+                pw.Text(
+                  'Carga horária total: $totalHoras horas',
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.Spacer(),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'Emitido em: $dataEmissao',
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        color: PdfColor.fromHex('#999999'),
+                      ),
+                    ),
+                    pw.Column(
+                      children: [
+                        pw.Container(
+                          width: 200,
+                          decoration: const pw.BoxDecoration(
+                            border: pw.Border(
+                              top: pw.BorderSide(width: 1),
+                            ),
+                          ),
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Text('Coordenação do Evento',
+                            style: const pw.TextStyle(fontSize: 10)),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    final nomeAluno = aluno['nome'] ?? 'certificado';
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+      name: 'certificado_$nomeAluno.pdf',
+    );
   }
 
   @override
@@ -199,6 +332,19 @@ class _CertificadoPageState extends State<CertificadoPage> {
                             const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: _exportarPdf,
+                  icon: const Icon(Icons.picture_as_pdf),
+                  label: const Text('Exportar PDF'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade700,
+                    foregroundColor: Colors.white,
                   ),
                 ),
               ),
