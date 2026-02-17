@@ -50,6 +50,11 @@ class ExcluirContaRequest(BaseModel):
     senha_atual: str
 
 
+class AlterarNomeRequest(BaseModel):
+    id_usuario: int
+    novo_nome: str
+
+
 # ===================== CRONOGRAMA (público) =====================
 
 @router.get("/palestras")
@@ -346,6 +351,32 @@ def meu_certificado(id_usuario: int):
 
 
 # ===================== GERENCIAR CONTA =====================
+
+@router.put("/alterar-nome")
+def alterar_nome(dados: AlterarNomeRequest):
+    """Altera o nome do usuário."""
+    engine = cria_conexao_postgre()
+    with Session(engine) as session:
+        u = session.get(Usuario, dados.id_usuario)
+        if not u:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        if not dados.novo_nome.strip():
+            raise HTTPException(status_code=400, detail="O nome não pode ser vazio")
+        u.nome = dados.novo_nome.strip()
+        session.add(u)
+        session.commit()
+        return {
+            "mensagem": "Nome alterado com sucesso!",
+            "usuario": {
+                "id_usuario": u.id_usuario,
+                "nome": u.nome,
+                "email": u.email,
+                "role": u.role,
+                "cpf": u.cpf,
+                "matricula": u.matricula,
+            },
+        }
+
 
 @router.put("/alterar-email")
 def alterar_email(dados: AlterarEmailRequest):

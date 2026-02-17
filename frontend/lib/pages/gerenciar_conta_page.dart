@@ -40,6 +40,63 @@ class _GerenciarContaPageState extends State<GerenciarContaPage> {
     }
   }
 
+  void _mostrarDialogAlterarNome() {
+    final nomeController = TextEditingController(text: _nome);
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Alterar Nome'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: nomeController,
+            decoration: const InputDecoration(
+              labelText: 'Novo nome',
+              prefixIcon: Icon(Icons.person),
+              border: OutlineInputBorder(),
+            ),
+            autofocus: true,
+            validator: (v) =>
+                v == null || v.trim().isEmpty ? 'Informe o nome' : null,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              try {
+                await ApiService.alterarNome(
+                  novoNome: nomeController.text.trim(),
+                );
+                if (mounted) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Nome alterado com sucesso!')),
+                  );
+                  _carregarPerfil();
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('$e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _mostrarDialogAlterarEmail() {
     final senhaController = TextEditingController();
     final emailController = TextEditingController();
@@ -310,10 +367,22 @@ class _GerenciarContaPageState extends State<GerenciarContaPage> {
                   const Icon(Icons.account_circle,
                       size: 80, color: Colors.deepPurple),
                   const SizedBox(height: 12),
-                  Text(
-                    _nome,
-                    style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _nome,
+                        style: const TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        icon: const Icon(Icons.edit,
+                            size: 20, color: Colors.deepPurple),
+                        tooltip: 'Editar nome',
+                        onPressed: _mostrarDialogAlterarNome,
+                      ),
+                    ],
                   ),
                   Text(
                     _email,

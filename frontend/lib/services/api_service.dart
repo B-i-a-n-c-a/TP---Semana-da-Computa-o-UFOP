@@ -390,6 +390,30 @@ class ApiService {
 
   // ===================== USUÁRIO - GERENCIAR CONTA =====================
 
+  static Future<Map<String, dynamic>> alterarNome({
+    required String novoNome,
+  }) async {
+    final idUsuario = await getUsuarioId();
+    final response = await http.put(
+      Uri.parse('$baseUrl/usuario/alterar-nome'),
+      headers: _headers,
+      body: jsonEncode({
+        'id_usuario': idUsuario,
+        'novo_nome': novoNome,
+      }),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['usuario'] != null) {
+        await salvarUsuario(data['usuario']);
+      }
+      return data;
+    } else {
+      throw Exception(
+          jsonDecode(response.body)['detail'] ?? 'Erro ao alterar nome');
+    }
+  }
+
   static Future<Map<String, dynamic>> alterarEmail({
     required String senhaAtual,
     required String novoEmail,
