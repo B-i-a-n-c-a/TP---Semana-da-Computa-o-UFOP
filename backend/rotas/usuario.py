@@ -178,6 +178,41 @@ def listar_minhas_avaliacoes(id_usuario: int):
         return resultado
 
 
+@router.get("/avaliacoes-por-palestra")
+def listar_avaliacoes_por_palestra():
+    """Lista todas as avaliações agrupadas por palestra."""
+    engine = cria_conexao_postgre()
+    with Session(engine) as session:
+        palestras = session.exec(select(Palestra)).all()
+        resultado = []
+        for p in palestras:
+            palestrante = session.get(Palestrante, p.id_palestrante)
+            avaliacoes = session.exec(
+                select(Avaliacao).where(Avaliacao.id_palestra == p.id_palestra)
+            ).all()
+            lista_avaliacoes = []
+            for a in avaliacoes:
+                usuario = session.get(Usuario, a.id_usuario)
+                lista_avaliacoes.append({
+                    "id_avaliacao": a.id_avaliacao,
+                    "nome_usuario": usuario.nome if usuario else "Anônimo",
+                    "nota": a.nota,
+                    "comentario": a.comentario,
+                })
+            notas = [a.nota for a in avaliacoes]
+            media = round(sum(notas) / len(notas), 1) if notas else 0
+            resultado.append({
+                "id_palestra": p.id_palestra,
+                "titulo": p.titulo,
+                "palestrante": palestrante.nome if palestrante else "N/A",
+                "data": p.data,
+                "media_nota": media,
+                "total_avaliacoes": len(avaliacoes),
+                "avaliacoes": lista_avaliacoes,
+            })
+        return resultado
+
+
 # ===================== NOTIFICAÇÕES =====================
 
 @router.get("/notificacoes")

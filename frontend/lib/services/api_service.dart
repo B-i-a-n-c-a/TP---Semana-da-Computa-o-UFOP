@@ -318,6 +318,18 @@ class ApiService {
     }
   }
 
+  static Future<List<dynamic>> listarAvaliacoesPorPalestra() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/usuario/avaliacoes-por-palestra'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Erro ao listar avaliações');
+    }
+  }
+
   // ===================== USUÁRIO - NOTIFICAÇÕES =====================
 
   static Future<List<dynamic>> listarNotificacoes() async {

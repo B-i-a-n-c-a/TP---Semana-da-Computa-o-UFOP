@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 import 'login_page.dart';
 import 'checkin_page.dart';
 import 'avaliacao_page.dart';
+import 'ver_avaliacoes_page.dart';
 import 'cronograma_page.dart';
 import 'notificacoes_page.dart';
 import 'meu_certificado_page.dart';
@@ -145,6 +146,17 @@ class _UsuarioHomePageState extends State<UsuarioHomePage> {
                 context,
                 MaterialPageRoute(
                     builder: (_) => const AvaliacaoPage()),
+              ),
+            ),
+            _MenuCard(
+              icon: Icons.rate_review,
+              title: 'Ver Avaliações',
+              subtitle: 'Veja as avaliações por palestra',
+              color: Colors.orange,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const VerAvaliacoesPage()),
               ),
             ),
             _MenuCard(
