@@ -18,7 +18,7 @@ DATABASE_URL = f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
 # ---- Modelos das Tabelas ----
 
 class Aluno(SQLModel, table=True):
-    id_aluno: int = Field(primary_key=True)
+    id_aluno: Optional[int] = Field(default=None, primary_key=True)
     nome: Optional[str] = None
     email: Optional[str] = None
     cpf: Optional[str] = None
