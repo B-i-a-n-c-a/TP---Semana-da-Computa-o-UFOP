@@ -387,4 +387,79 @@ class ApiService {
       throw Exception('Erro ao buscar perfil');
     }
   }
+
+  // ===================== USUÁRIO - GERENCIAR CONTA =====================
+
+  static Future<Map<String, dynamic>> alterarEmail({
+    required String senhaAtual,
+    required String novoEmail,
+  }) async {
+    final idUsuario = await getUsuarioId();
+    final response = await http.put(
+      Uri.parse('$baseUrl/usuario/alterar-email'),
+      headers: _headers,
+      body: jsonEncode({
+        'id_usuario': idUsuario,
+        'senha_atual': senhaAtual,
+        'novo_email': novoEmail,
+      }),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      // Atualiza os dados locais do usuário
+      if (data['usuario'] != null) {
+        await salvarUsuario(data['usuario']);
+      }
+      return data;
+    } else {
+      throw Exception(
+          jsonDecode(response.body)['detail'] ?? 'Erro ao alterar email');
+    }
+  }
+
+  static Future<Map<String, dynamic>> alterarSenha({
+    required String senhaAtual,
+    required String novaSenha,
+  }) async {
+    final idUsuario = await getUsuarioId();
+    final response = await http.put(
+      Uri.parse('$baseUrl/usuario/alterar-senha'),
+      headers: _headers,
+      body: jsonEncode({
+        'id_usuario': idUsuario,
+        'senha_atual': senhaAtual,
+        'nova_senha': novaSenha,
+      }),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(
+          jsonDecode(response.body)['detail'] ?? 'Erro ao alterar senha');
+    }
+  }
+
+  static Future<Map<String, dynamic>> excluirConta({
+    required String senhaAtual,
+  }) async {
+    final idUsuario = await getUsuarioId();
+    final request = http.Request(
+      'DELETE',
+      Uri.parse('$baseUrl/usuario/excluir-conta'),
+    );
+    request.headers.addAll(_headers);
+    request.body = jsonEncode({
+      'id_usuario': idUsuario,
+      'senha_atual': senhaAtual,
+    });
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode == 200) {
+      await logout();
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(
+          jsonDecode(response.body)['detail'] ?? 'Erro ao excluir conta');
+    }
+  }
 }

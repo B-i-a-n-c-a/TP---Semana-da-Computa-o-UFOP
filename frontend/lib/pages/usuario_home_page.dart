@@ -7,6 +7,7 @@ import 'ver_avaliacoes_page.dart';
 import 'cronograma_page.dart';
 import 'notificacoes_page.dart';
 import 'meu_certificado_page.dart';
+import 'gerenciar_conta_page.dart';
 
 class UsuarioHomePage extends StatefulWidget {
   const UsuarioHomePage({super.key});
@@ -185,6 +186,17 @@ class _UsuarioHomePageState extends State<UsuarioHomePage> {
                 );
                 _carregarDados();
               },
+            ),
+            _MenuCard(
+              icon: Icons.manage_accounts,
+              title: 'Gerenciar Conta',
+              subtitle: 'Alterar email, senha ou excluir conta',
+              color: Colors.teal,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const GerenciarContaPage()),
+              ),
             ),
           ],
         ),

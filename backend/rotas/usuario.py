@@ -14,6 +14,7 @@ from dados_banco import (
     cria_conexao_postgre, Palestra, Presenca, Palestrante,
     Usuario, Avaliacao, Notificacao,
 )
+from auth_utils import hash_senha, verificar_senha
 
 router = APIRouter()
 
@@ -30,6 +31,23 @@ class AvaliacaoCreate(BaseModel):
     id_palestra: int
     nota: int  # 1 a 5
     comentario: str | None = None
+
+
+class AlterarEmailRequest(BaseModel):
+    id_usuario: int
+    senha_atual: str
+    novo_email: str
+
+
+class AlterarSenhaRequest(BaseModel):
+    id_usuario: int
+    senha_atual: str
+    nova_senha: str
+
+
+class ExcluirContaRequest(BaseModel):
+    id_usuario: int
+    senha_atual: str
 
 
 # ===================== CRONOGRAMA (público) =====================
@@ -325,3 +343,84 @@ def meu_certificado(id_usuario: int):
                 f"Computação DECSI com carga horária total de {round(total_horas, 1)} horas."
             ),
         }
+
+
+# ===================== GERENCIAR CONTA =====================
+
+@router.put("/alterar-email")
+def alterar_email(dados: AlterarEmailRequest):
+    """Altera o email do usuário após verificar a senha atual."""
+    engine = cria_conexao_postgre()
+    with Session(engine) as session:
+        u = session.get(Usuario, dados.id_usuario)
+        if not u:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        if not verificar_senha(dados.senha_atual, u.senha_hash):
+            raise HTTPException(status_code=400, detail="Senha atual incorreta")
+        # Verificar se o novo email já está em uso
+        existente = session.exec(
+            select(Usuario).where(Usuario.email == dados.novo_email)
+        ).first()
+        if existente and existente.id_usuario != dados.id_usuario:
+            raise HTTPException(status_code=400, detail="Este email já está em uso")
+        u.email = dados.novo_email
+        session.add(u)
+        session.commit()
+        return {
+            "mensagem": "Email alterado com sucesso!",
+            "usuario": {
+                "id_usuario": u.id_usuario,
+                "nome": u.nome,
+                "email": u.email,
+                "role": u.role,
+                "cpf": u.cpf,
+                "matricula": u.matricula,
+            },
+        }
+
+
+@router.put("/alterar-senha")
+def alterar_senha(dados: AlterarSenhaRequest):
+    """Altera a senha do usuário após verificar a senha atual."""
+    engine = cria_conexao_postgre()
+    with Session(engine) as session:
+        u = session.get(Usuario, dados.id_usuario)
+        if not u:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        if not verificar_senha(dados.senha_atual, u.senha_hash):
+            raise HTTPException(status_code=400, detail="Senha atual incorreta")
+        u.senha_hash = hash_senha(dados.nova_senha)
+        session.add(u)
+        session.commit()
+        return {"mensagem": "Senha alterada com sucesso!"}
+
+
+@router.delete("/excluir-conta")
+def excluir_conta(dados: ExcluirContaRequest):
+    """Exclui a conta do usuário após verificar a senha atual."""
+    engine = cria_conexao_postgre()
+    with Session(engine) as session:
+        u = session.get(Usuario, dados.id_usuario)
+        if not u:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        if not verificar_senha(dados.senha_atual, u.senha_hash):
+            raise HTTPException(status_code=400, detail="Senha atual incorreta")
+        # Remover dados associados
+        presencas = session.exec(
+            select(Presenca).where(Presenca.id_usuario == dados.id_usuario)
+        ).all()
+        for p in presencas:
+            session.delete(p)
+        avaliacoes = session.exec(
+            select(Avaliacao).where(Avaliacao.id_usuario == dados.id_usuario)
+        ).all()
+        for a in avaliacoes:
+            session.delete(a)
+        notificacoes = session.exec(
+            select(Notificacao).where(Notificacao.id_usuario == dados.id_usuario)
+        ).all()
+        for n in notificacoes:
+            session.delete(n)
+        session.delete(u)
+        session.commit()
+        return {"mensagem": "Conta excluída com sucesso"}
